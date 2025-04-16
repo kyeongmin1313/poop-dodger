@@ -8,7 +8,7 @@ let health = 3;
 let shake = 0;
 let gameOverFlag = false;
 
-const FIREBASE_URL = "https://poop-dodger-default-rtdb.firebaseio.com/scores.json"; // Example Firebase URL
+const FIREBASE_URL = "https://poop360-ranking-default-rtdb.firebaseio.com/scores.json"; // Example Firebase URL
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -46,6 +46,7 @@ function draw() {
       poops.splice(i, 1);
       health--;
       shake = 10;
+      if (navigator.vibrate) navigator.vibrate(200); // 진동 효과
     } else if (poops[i].offscreen()) {
       poops.splice(i, 1);
     }
