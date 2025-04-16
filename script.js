@@ -1,12 +1,14 @@
 
 let player;
 let poops = [];
-let spawnRate = 15;
-let poopSpeed = 4;
+let spawnRate = 20;
+let poopSpeed = 3;
 let score = 0;
 let health = 3;
 let shake = 0;
 let gameOverFlag = false;
+
+const FIREBASE_URL = "https://poop-dodger-default-rtdb.firebaseio.com/scores.json"; // Example Firebase URL
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -31,7 +33,7 @@ function draw() {
   player.show();
 
   if (frameCount % spawnRate === 0 && !gameOverFlag) {
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 6; i++) {
       poops.push(new Poop());
     }
   }
@@ -66,8 +68,8 @@ function restart() {
   score = 0;
   health = 3;
   poops = [];
-  spawnRate = 15;
-  poopSpeed = 4;
+  spawnRate = 20;
+  poopSpeed = 3;
   shake = 0;
   gameOverFlag = false;
   loop();
@@ -98,31 +100,39 @@ function gameOver() {
   text(`최종 점수: ${int(score)}`, width / 2, height / 2 - 20);
   noLoop();
 
-  const highScores = JSON.parse(localStorage.getItem("ranking") || "[]");
-  const topScore = highScores.length > 0 ? highScores[0].score : 0;
-  if (int(score) > topScore || highScores.length < 5) {
-    let name = prompt("최고 점수 갱신! 이름을 입력하세요:");
-    if (name) {
-      highScores.push({ name: name, score: int(score) });
-      highScores.sort((a, b) => b.score - a.score);
-      if (highScores.length > 5) highScores.pop();
-      localStorage.setItem("ranking", JSON.stringify(highScores));
-    }
+  let name = prompt("최고 점수! 이름을 입력하세요:");
+  if (name) {
+    saveScore(name, int(score));
   }
-  loadRanking();
 }
 
 function loadRanking() {
-  const highScores = JSON.parse(localStorage.getItem("ranking") || "[]");
-  let y = 100;
-  textAlign(LEFT);
-  textSize(20);
-  fill(0);
-  text("🏆 친구 랭킹", 20, y);
-  for (let i = 0; i < highScores.length; i++) {
-    y += 30;
-    text(`${i + 1}. ${highScores[i].name} - ${highScores[i].score}`, 20, y);
-  }
+  fetch(FIREBASE_URL)
+    .then(res => res.json())
+    .then(data => {
+      if (!data) return;
+      const entries = Object.values(data);
+      entries.sort((a, b) => b.score - a.score);
+      let y = 100;
+      fill(0);
+      textAlign(LEFT);
+      textSize(20);
+      text("🏆 온라인 랭킹", 20, y);
+      for (let i = 0; i < Math.min(5, entries.length); i++) {
+        y += 30;
+        text(`${i + 1}. ${entries[i].name} - ${entries[i].score}`, 20, y);
+      }
+    });
+}
+
+function saveScore(name, score) {
+  fetch(FIREBASE_URL, {
+    method: "POST",
+    body: JSON.stringify({ name, score }),
+    headers: { "Content-Type": "application/json" }
+  }).then(() => {
+    loadRanking();
+  });
 }
 
 class Player {
